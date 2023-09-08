@@ -153,7 +153,7 @@ class MyEDU:
 my_edu = MyEDU()
 
 list_of_actions = ["1. Register for your favorite courses",
-                   "2. Register one course", "3. Remove the course"]
+                   "2. Register one course", "3. Remove the course", "4. Change the course group"]
 action = input(
     "\nPlease Select one of the actions below:\n" + "\n".join(list_of_actions) + "\n")
 
@@ -171,14 +171,18 @@ if action == "1":
 
 elif action == "2":
     course = input(
-        "\nRegistering the course...\nEnter the course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
+        "\n** Registering the course **\nEnter the course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
     my_edu.cource_actions("add", course)
 
 elif action == "3":
     course = input(
-        "\nRemoving the course...\nEnter the course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
+        "\n** Removing the course **\nEnter the course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
     my_edu.cource_actions("remove", course)
 
-# elif action == "4":
-#     course = input("\nChanging the course group...\nEnter the course id:\n")
-#     my_edu.cource_actions("change", course)
+elif action == "4":
+    deleted_course = input(
+        "\n** Changing the course group **\nEnter the previous course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
+    my_edu.cource_actions("remove", deleted_course)
+    selected_course = input(
+        "\nEnter the new course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
+    my_edu.cource_actions("add", selected_course)
