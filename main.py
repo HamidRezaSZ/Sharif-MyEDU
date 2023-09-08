@@ -18,7 +18,7 @@ class MyEDU:
         self.username, self.password = self.get_and_set_authentication()
         self.token = self.get_token()
 
-    def request_and_retry(self, method, url, json_data, headers, desired_status_code, waiting_times=[0, 5, 10]):
+    def request_and_retry(self, method, url, json_data, headers, desired_status_code, waiting_times=[0, 3, 7]):
         try:
             max_retries = len(waiting_times)
             retries = 0
@@ -40,6 +40,7 @@ class MyEDU:
 
                     if result == {'error': 'AUTHORIZATION'}:
                         self.token = self.get_token()
+                        continue
 
                     return result
 
@@ -152,7 +153,7 @@ class MyEDU:
 my_edu = MyEDU()
 
 list_of_actions = ["1. Register for your favorite courses",
-                   "2. Register one course", "3. Remove the course", "4. Change group of the course"]
+                   "2. Register one course", "3. Remove the course"]
 action = input(
     "\nPlease Select one of the actions below:\n" + "\n".join(list_of_actions) + "\n")
 
@@ -162,32 +163,22 @@ while action not in [str(number) for number in range(1, len(list_of_actions) + 1
         "\nPlease Select one of the actions below:\n" + "\n".join(list_of_actions) + "\n")
 
 if action == "1":
-    confirm = input(
-        "\nAre you sure you want to register for your favorite courses? (y/n)\n")
+    favorites = my_edu.get_favorites()
 
-    while confirm.lower() not in ["y", "n"]:
-        print("\nInvalid input!\n")
-        confirm = input(
-            "\nAre you sure you want to register for your favorite courses? (y/n)\n")
-
-    if confirm.lower() == "y":
-        favorites = my_edu.get_favorites()
-
-        for course in favorites:
-            Thread(target=my_edu.cource_actions,
-                   args=("add", course)).start()
-
-    elif confirm.lower() == "n":
-        print("\nOK, Bye!\n")
+    for course in favorites:
+        Thread(target=my_edu.cource_actions,
+               args=("add", course)).start()
 
 elif action == "2":
-    course = input("\nRegistering the course...\nEnter the course id:\n")
+    course = input(
+        "\nRegistering the course...\nEnter the course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
     my_edu.cource_actions("add", course)
 
 elif action == "3":
-    course = input("\nRemoving the course...\nEnter the course id:\n")
+    course = input(
+        "\nRemoving the course...\nEnter the course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
     my_edu.cource_actions("remove", course)
 
-elif action == "4":
-    course = input("\nRemoving the course...\nEnter the course id:\n")
-    my_edu.cource_actions("change", course)
+# elif action == "4":
+#     course = input("\nRemoving the course...\nEnter the course id:\n")
+#     my_edu.cource_actions("change", course)
