@@ -36,10 +36,15 @@ class MyEDU:
                         method, url=url, data=json_data, headers=headers)
 
                 if response.status_code == desired_status_code:
-                    return response.json()
+                    result = response.json()
+
+                    if result == {'error': 'AUTHORIZATION'}:
+                        self.token = self.get_token()
+
+                    return result
 
             logging.error(
-                f"Exception: request_and_retry() -> response status code: {response.status_code}")
+                f"Exception: request_and_retry() -> response status code: {response.status_code}, response: {response.json()}")
             sys.exit()
 
         except Exception as e:
