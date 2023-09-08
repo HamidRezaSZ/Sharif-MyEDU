@@ -2,7 +2,11 @@
 
 MyEDU is a Python project for registering courses at https://my.edu.sharif.edu .
 
-## Installation:
+## Requires
+
+Python >=3.10
+
+## Installation
 
 **1. Clone the Repo**
 
