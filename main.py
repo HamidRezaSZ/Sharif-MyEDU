@@ -180,5 +180,5 @@ elif action == "3":
     my_edu.cource_actions("remove", course)
 
 # elif action == "4":
-#     course = input("\nRemoving the course...\nEnter the course id:\n")
+#     course = input("\nChanging the course group...\nEnter the course id:\n")
 #     my_edu.cource_actions("change", course)
