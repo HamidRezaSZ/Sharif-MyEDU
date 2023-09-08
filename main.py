@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import sys
+import time
 from threading import Thread
 
 import requests
@@ -16,53 +18,55 @@ class MyEDU:
         self.username, self.password = self.get_and_set_authentication()
         self.token = self.get_token()
 
+    def request_and_retry(self, method, url, json_data, headers, desired_status_code, waiting_times=[0, 5, 10]):
+        try:
+            max_retries = len(waiting_times)
+            retries = 0
+            while retries < max_retries:
+                i = retries
+                retries += 1
+                if waiting_times[i] > 0:
+                    time.sleep(waiting_times[i])
+
+                if type(json_data) == dict:
+                    response = requests.request(
+                        method, url=url, json=json_data, headers=headers)
+                else:
+                    response = requests.request(
+                        method, url=url, data=json_data, headers=headers)
+
+                if response.status_code == desired_status_code:
+                    return response.json()
+
+            logging.error(
+                f"Exception: request_and_retry() -> response status code: {response.status_code}")
+            sys.exit()
+
+        except Exception as e:
+            logging.error(f"Exception: request_and_retry() -> {repr(e)}")
+            sys.exit()
+
     def get_and_set_authentication(self):
-        mode = "w+"
+        username = ""
+        password = ""
+
         if os.path.exists('authentication.txt'):
-            mode = "r"
+            with open('authentication.txt', "r") as f:
+                text = f.read()
 
-        with open('authentication.txt', mode) as f:
-            username = ""
-            password = ""
+                if text:
+                    text = json.loads(text.strip())
+                    username = text.get("username")
+                    password = text.get("password")
 
-            text = f.read()
-
-            if text:
-                text = json.loads(text.strip())
-                username = text.get("username")
-                password = text.get("password")
-
-            if not username or not password:
+        if not username or not password:
+            with open('authentication.txt', "w+") as f:
                 username = input("\nEnter your my.edu username:\n")
                 password = input("\nEnter your my.edu password:\n")
                 f.write(json.dumps(
                     {"username": username, "password": password}))
 
-            return username, password
-
-    def get_captcha(self):
-        captcha_url = "https://my.edu.sharif.edu/api/auth/captcha"
-        captcha_response = requests.request("GET", captcha_url)
-
-        try:
-            captcha_response = captcha_response.json()
-            captcha = captcha_response["data"]
-            challenge = captcha_response["challenge"]
-            return captcha, challenge
-
-        except Exception as e:
-            logging.error(f"Exception: get_captcha() -> {repr(e)}")
-            exit()
-
-    def solve_captcha(self):
-        try:
-            captcha, challenge = self.get_captcha()
-            solved_captcha = solver.solve_captcha(captcha)
-            return solved_captcha, challenge
-
-        except Exception as e:
-            logging.error(f"Exception: solve_captcha() -> {repr(e)}")
-            exit()
+        return username, password
 
     def get_token(self):
         solved_captcha, challenge = self.solve_captcha()
@@ -72,14 +76,36 @@ class MyEDU:
         url = "https://my.edu.sharif.edu/api/auth/login"
 
         try:
-            response = requests.request(
-                "POST", url, headers=headers, data=payload)
-            response = response.json()
+            response = self.request_and_retry(
+                method="POST", url=url, json_data=payload, headers=headers, desired_status_code=200)
             return response["token"]
 
         except Exception as e:
             logging.error(f"Exception: get_token() -> {repr(e)}")
-            exit()
+            sys.exit()
+
+    def get_captcha(self):
+        captcha_url = "https://my.edu.sharif.edu/api/auth/captcha"
+        captcha_response = self.request_and_retry(
+            method="GET", url=captcha_url, json_data=None, headers=None, desired_status_code=200)
+        try:
+            captcha = captcha_response["data"]
+            challenge = captcha_response["challenge"]
+            return captcha, challenge
+
+        except Exception as e:
+            logging.error(f"Exception: get_captcha() -> {repr(e)}")
+            sys.exit()
+
+    def solve_captcha(self):
+        try:
+            captcha, challenge = self.get_captcha()
+            solved_captcha = solver.solve_captcha(captcha)
+            return solved_captcha, challenge
+
+        except Exception as e:
+            logging.error(f"Exception: solve_captcha() -> {repr(e)}")
+            sys.exit()
 
     def cource_actions(self, action, course):
         results = []
@@ -89,9 +115,8 @@ class MyEDU:
         url = "https://my.edu.sharif.edu/api/reg"
 
         try:
-            response = requests.request(
-                "POST", url, headers=headers, data=payload)
-            response = response.json()
+            response = self.request_and_retry(
+                method="POST", url=url, json_data=payload, headers=headers, desired_status_code=200)
 
             for job in response["jobs"]:
                 if job['courseId'] == course:
