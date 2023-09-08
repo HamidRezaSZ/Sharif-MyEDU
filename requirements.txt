@@ -1,0 +1,11 @@
+certifi==2023.7.22
+charset-normalizer==3.2.0
+gevent==23.9.0.post1
+greenlet==2.0.2
+idna==3.4
+requests==2.31.0
+svg-captcha-solver==0.0.9
+urllib3==2.0.4
+websockets==11.0.3
+zope.event==5.0
+zope.interface==6.0
