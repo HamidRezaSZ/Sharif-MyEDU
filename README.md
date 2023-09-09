@@ -1,4 +1,4 @@
-# MyEDU
+# Sharif-MyEDU
 
 Sharif-MyEDU is a Python project for registering Sharif courses at https://my.edu.sharif.edu .
 
