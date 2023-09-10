@@ -115,7 +115,8 @@ class MyEDU:
 
     def cource_actions(self, action, course):
         results = []
-        payload = json.dumps({"action": action, "course": course})
+        payload = json.dumps(
+            {"action": action, "course": course, "units": self.get_course_units(course)})
         headers = {"content-type": "application/json",
                    "authorization": self.token}
         url = "https://my.edu.sharif.edu/api/reg"
@@ -142,12 +143,38 @@ class MyEDU:
                 messages = websocket.recv()
                 messages = json.loads(messages)
 
-                if messages['type'] == "userState":
-                    return messages['message']['favorites']
+                while messages['type'] != "userState":
+                    websocket.send(f"token={self.token}")
+                    messages = websocket.recv()
+                    messages = json.loads(messages)
+
+                return messages['message']['favorites']
 
         except Exception as e:
             logging.error(f"Exception: get_favorites() -> {repr(e)}")
             return []
+
+    def get_course_units(self, course_id):
+        try:
+            with connect(f"wss://my.edu.sharif.edu/api/ws?token={self.token}") as websocket:
+                websocket.send(f"token={self.token}")
+                messages = websocket.recv()
+                messages = json.loads(messages)
+
+                while messages['type'] != "listUpdate":
+                    websocket.send(f"token={self.token}")
+                    messages = websocket.recv()
+                    messages = json.loads(messages)
+
+                for course in messages['message']:
+                    if course['id'] == course_id:
+                        return course['units']
+
+                raise Exception(f"Units of course {course_id} not found!")
+
+        except Exception as e:
+            logging.error(f"Exception: get_course_units() -> {repr(e)}")
+            sys.exit()
 
 
 my_edu = MyEDU()
