@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -6,17 +7,24 @@ import time
 from threading import Thread
 
 import requests
+import websockets
 from solvers.svgcaptcha import solver
-from websockets.sync.client import connect
 
 logging.basicConfig(level=logging.ERROR,
                     format='\n%(asctime)s %(levelname)s %(message)s', datefmt='%H:%M:%S')
+
+
+def worker(func, loop):
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(func())
 
 
 class MyEDU:
     def __init__(self):
         self.username, self.password = self.get_and_set_authentication()
         self.token = self.get_token()
+        self.all_courses = []
+        self.favorites = []
 
     def request_and_retry(self, method, url, json_data, headers, desired_status_code, waiting_times=[0, 3, 7]):
         try:
@@ -87,7 +95,8 @@ class MyEDU:
             return response["token"]
 
         except Exception as e:
-            logging.error(f"Exception: get_token() -> {repr(e)}")
+            logging.error(
+                f"Exception: get_token() -> {repr(e)} - response: {response}")
             sys.exit()
 
     def get_captcha(self):
@@ -136,51 +145,53 @@ class MyEDU:
         print("\n".join(
             [f"{list(result.keys())[0]}: {list(result.values())[0]}" for result in results]))
 
-    def get_favorites(self):
-        try:
-            with connect(f"wss://my.edu.sharif.edu/api/ws?token={self.token}") as websocket:
-                websocket.send(f"token={self.token}")
-                messages = websocket.recv()
-                messages = json.loads(messages)
-
-                while messages['type'] != "userState":
-                    websocket.send(f"token={self.token}")
-                    messages = websocket.recv()
-                    messages = json.loads(messages)
-
-                return messages['message']['favorites']
-
-        except Exception as e:
-            logging.error(f"Exception: get_favorites() -> {repr(e)}")
-            return []
-
     def get_course_units(self, course_id):
         try:
-            with connect(f"wss://my.edu.sharif.edu/api/ws?token={self.token}") as websocket:
-                websocket.send(f"token={self.token}")
-                messages = websocket.recv()
-                messages = json.loads(messages)
+            for course in self.all_courses:
+                if course['id'] == course_id:
+                    return course['units']
 
-                while messages['type'] != "listUpdate":
-                    websocket.send(f"token={self.token}")
-                    messages = websocket.recv()
-                    messages = json.loads(messages)
-
-                for course in messages['message']:
-                    if course['id'] == course_id:
-                        return course['units']
-
-                raise Exception(f"Units of course {course_id} not found!")
+            raise Exception(f"Units of course {course_id} not found!")
 
         except Exception as e:
             logging.error(f"Exception: get_course_units() -> {repr(e)}")
             sys.exit()
 
+    def register_all_favorites(self):
+        try:
+            for course in self.favorites:
+                Thread(target=self.cource_actions,
+                       args=("add", course)).start()
+        except Exception as e:
+            logging.error(f"Exception: register_all_favorites() -> {repr(e)}")
+
+    async def get_courses_information(self):
+        try:
+            async with websockets.connect(f"wss://my.edu.sharif.edu/api/ws?token={self.token}") as websocket:
+                while True:
+                    await websocket.send(f"token={self.token}")
+                    messages = await websocket.recv()
+                    messages = json.loads(messages)
+
+                    if messages['type'] == "userState":
+                        self.favorites = messages['message']['favorites']
+                    elif messages['type'] == "listUpdate":
+                        for course in messages['message']:
+                            if course not in self.all_courses:
+                                self.all_courses.append(course)
+        except Exception as e:
+            logging.error(f"Exception: get_courses_information() -> {repr(e)}")
+
 
 my_edu = MyEDU()
 
+loop = asyncio.new_event_loop()
+updater = Thread(target=worker, args=(my_edu.get_courses_information, loop,))
+updater.start()
+
 list_of_actions = ["1. Register for your favorite courses",
                    "2. Register one course", "3. Remove the course", "4. Change the course group"]
+
 action = input(
     "\nPlease Select one of the actions below:\n" + "\n".join(list_of_actions) + "\n")
 
@@ -190,11 +201,7 @@ while action not in [str(number) for number in range(1, len(list_of_actions) + 1
         "\nPlease Select one of the actions below:\n" + "\n".join(list_of_actions) + "\n")
 
 if action == "1":
-    favorites = my_edu.get_favorites()
-
-    for course in favorites:
-        Thread(target=my_edu.cource_actions,
-               args=("add", course)).start()
+    my_edu.register_all_favorites()
 
 elif action == "2":
     add_course = input(
