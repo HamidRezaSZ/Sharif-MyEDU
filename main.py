@@ -197,19 +197,16 @@ if action == "1":
                args=("add", course)).start()
 
 elif action == "2":
-    course = input(
+    add_course = input(
         "\n** Registering the course **\nEnter the course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
-    my_edu.cource_actions("add", course)
+    my_edu.cource_actions("add", add_course)
 
 elif action == "3":
-    course = input(
+    remove_course = input(
         "\n** Removing the course **\nEnter the course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
-    my_edu.cource_actions("remove", course)
+    my_edu.cource_actions("remove", remove_course)
 
 elif action == "4":
-    deleted_course = input(
-        "\n** Changing the course group **\nEnter the previous course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
-    my_edu.cource_actions("remove", deleted_course)
-    selected_course = input(
-        "\nEnter the new course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
-    my_edu.cource_actions("add", selected_course)
+    new_course = input(
+        "\n** Changing the course group **\nEnter the new course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
+    my_edu.cource_actions("move", new_course)
