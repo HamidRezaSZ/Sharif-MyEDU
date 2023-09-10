@@ -165,6 +165,14 @@ class MyEDU:
         except Exception as e:
             logging.error(f"Exception: register_all_favorites() -> {repr(e)}")
 
+    def add_or_update_course(self, courses):
+        all_courses_ids = [item['id'] for item in self.all_courses]
+        for course in courses:
+            if course['id'] in all_courses_ids:
+                self.all_courses[all_courses_ids.index(course['id'])] = course
+            else:
+                self.all_courses.append(course)
+
     async def get_courses_information(self):
         try:
             async with websockets.connect(f"wss://my.edu.sharif.edu/api/ws?token={self.token}") as websocket:
@@ -176,9 +184,7 @@ class MyEDU:
                     if messages['type'] == "userState":
                         self.favorites = messages['message']['favorites']
                     elif messages['type'] == "listUpdate":
-                        for course in messages['message']:
-                            if course not in self.all_courses:
-                                self.all_courses.append(course)
+                        self.add_or_update_course(messages['message'])
         except Exception as e:
             logging.error(f"Exception: get_courses_information() -> {repr(e)}")
 
