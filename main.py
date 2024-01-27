@@ -198,28 +198,26 @@ updater.start()
 list_of_actions = ["1. Register for your favorite courses",
                    "2. Register one course", "3. Remove the course", "4. Change the course group"]
 
-action = input(
-    "\nPlease Select one of the actions below:\n" + "\n".join(list_of_actions) + "\n")
-
-while action not in [str(number) for number in range(1, len(list_of_actions) + 1)]:
-    print("\nInvalid input!\n")
+while True:
     action = input(
         "\nPlease Select one of the actions below:\n" + "\n".join(list_of_actions) + "\n")
 
-if action == "1":
-    my_edu.register_all_favorites()
+    if action == "1":
+        my_edu.register_all_favorites()
 
-elif action == "2":
-    add_course = input(
-        "\n** Registering the course **\nEnter the course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
-    my_edu.cource_actions("add", add_course)
+    elif action == "2":
+        add_course = input(
+            "\n** Registering the course **\nEnter the course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
+        my_edu.cource_actions("add", add_course)
 
-elif action == "3":
-    remove_course = input(
-        "\n** Removing the course **\nEnter the course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
-    my_edu.cource_actions("remove", remove_course)
+    elif action == "3":
+        remove_course = input(
+            "\n** Removing the course **\nEnter the course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
+        my_edu.cource_actions("remove", remove_course)
 
-elif action == "4":
-    new_course = input(
-        "\n** Changing the course group **\nEnter the new course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
-    my_edu.cource_actions("move", new_course)
+    elif action == "4":
+        new_course = input(
+            "\n** Changing the course group **\nEnter the new course id:\nEnter like this:\nCourseID-GroupNumber\nFor example: 40419-1\n")
+        my_edu.cource_actions("move", new_course)
+    else:
+        print("\nInvalid input!\n")
